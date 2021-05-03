@@ -2,6 +2,7 @@
 
 
 import os
+import sys
 
 PathOCCToolbox = "C:/Users/gfrusque/Spyder_Part1/OCC"
 os.chdir(PathOCCToolbox )
@@ -13,11 +14,8 @@ import pandas as pd
 # Graphics
 import matplotlib as mplt
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn import metrics
 
-import scipy.signal as scisi
-import neurokit2
 
 import HELM
 from Utils import generate_data, SimpleAE_model
@@ -27,7 +25,6 @@ import tensorflow as tf
 import librosa
 import librosa.core
 import librosa.feature
-import sys
 
 #%%
 
@@ -73,38 +70,46 @@ Fvalid = np.abs(np.fft.fft(DataValid,axis=1))[:,0:256]
 
 #HELM Model: Michau, Gabriel, Yang Hu, Thomas Palmé, and Olga Fink. “Feature Learning for Fault Detection in High-Dimensional Condition-Monitoring Signals.” ArXiv Preprint ArXiv:1810.05550, 2018.
 paraHELM={}
-paraHELM['nhelm']          = 40                  # number of times HELM is trained and ran
+paraHELM['nhelm']          = 60                  # number of times HELM is trained and ran
 paraHELM['fista_weight']   = 1e-3               # weight factor lambda for l1 norm reg (AE)
 paraHELM['fista_cv']       = 1e-5               # Number of iterations or RMSE @ cv
 paraHELM['ridge_weight']   = 1e-3              # weight factor lambda for l2 norm reg (1-class)
 quant = 99.5
-paraHELM['neuron_number']  = np.array([50])
+paraHELM['neuron_number']  = np.array([100])
 elmT   = HELM.HELM(paraHELM, Ftrain)
 
+#%%
 #Simple Autoencoder with decision on the residual
+callback_1 = tf.keras.callbacks.EarlyStopping(
+    monitor='loss', min_delta=0.01, patience=5, verbose=0, mode='auto',
+    baseline=None, restore_best_weights=False
+)
 
 SAEmodel = SimpleAE_model(np.shape(Ftrain)[1])
-SAEmodel.compile(optimizer='adam',loss='mean_squared_error')
+SAEmodel.compile(optimizer='adam',
+                 loss='mean_squared_error')
 history = SAEmodel.fit(
     Ftrain,
     Ftrain,
-    epochs=100,
+    epochs=1000,
     batch_size=512,
     shuffle=True,
     validation_split=0.1,
-    verbose=1)
+    verbose=1,
+    callbacks = [callback_1])
 #plt.plot(history.history["loss"])
 
 
 #%%
 
 ### Step D : Validation
+#HELM Model
+outHELM = HELM.HELM_run(elmT, Test = Fvalid)
+ScoreAUC_HELM = metrics.roc_auc_score(LabelValid, outHELM['Test']['Y'])
+print(ScoreAUC_HELM)
+#SAE Model
 outSAE = np.mean(np.square(Fvalid - SAEmodel.predict(Fvalid)), axis=1)
 ScoreAUC_SAE = metrics.roc_auc_score(LabelValid, outSAE)
 print(ScoreAUC_SAE)
-#HELM Model
-outHELM = HELM.HELM_run(elmT, Test = Fvalid)
-res = outHELM['Test']['Y']
-ScoreAUC_HELM = metrics.roc_auc_score(LabelValid, res)
-print(ScoreAUC_HELM)
+
 
