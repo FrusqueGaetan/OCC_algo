@@ -28,7 +28,7 @@ import librosa.feature
 
 #%%
 
-### Step A : set the training and validation dataset
+### Step A : set the training and validation dataset.
 
 ##1 Consider a Healthy dataset and an unealthy one (for validation only)
 nHealth=20000
@@ -62,6 +62,9 @@ LabelValid = np.concatenate((np.zeros((np.shape(idTestH)[0])),np.ones((nAbnormal
 #Simple fourier transform
 Ftrain = np.abs(np.fft.fft(DataTrain,axis=1))[:,0:256]
 Fvalid = np.abs(np.fft.fft(DataValid,axis=1))[:,0:256]
+
+
+
 
 #%%
 

@@ -7,7 +7,9 @@ Code for generating a simple dataset
 Version: 30/04/2021
 """
 import numpy as np
+import pandas as pd
 import tensorflow.keras as keras
+import os
 
 
 def generate_data(Nhealth=1200,Nabnormal=200):
@@ -27,6 +29,27 @@ def generate_data(Nhealth=1200,Nabnormal=200):
     Mabnormal += np.sin(np.outer((np.random.rand(Nabnormal)/10+0.2)*(np.pi),np.arange(0,Ntime,1))) + np.sin(np.outer((np.random.rand(Nabnormal)/5+0.8)*(np.pi),np.arange(0,Ntime,1)))
     
     return Mhealth, Mabnormal
+ 
+def read_data_fold(folder):
+    ld = os.listdir(folder)
+    Table=[]
+    X = []
+    for file in ld:
+        data = np.load(folder+file)
+        df = pd.DataFrame(data)
+        df.columns = ['time', 
+                  'trigger', 
+                  'pole_A', 
+                  'pole_B', 
+                  'pole_C', 
+                  'coil_open', 
+                  'coil_close', 
+                  'acc_786A', 
+                  'acc_ach01']
+        Table.append(df)
+        X.append(df['acc_786A'].values)
+    return Table, X
+
     
 def SimpleAE_model(inputDim):
 
@@ -39,3 +62,6 @@ def SimpleAE_model(inputDim):
     h = keras.layers.Dense(inputDim, activation=None)(h)
 
     return keras.models.Model(inputs=inputLayer, outputs=h)
+
+
+
