@@ -16,7 +16,7 @@ import matplotlib as mplt
 import matplotlib.pyplot as plt
 from sklearn import metrics
 
-
+from sklearn import metrics
 import HELM
 from Utils import generate_data, SimpleAE_model
 

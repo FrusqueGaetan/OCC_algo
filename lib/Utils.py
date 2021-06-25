@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import tensorflow.keras as keras
 import os
+import sys
 
 
 def generate_data(Nhealth=1200,Nabnormal=200):
@@ -63,5 +64,19 @@ def SimpleAE_model(inputDim):
 
     return keras.models.Model(inputs=inputLayer, outputs=h)
 
-
+def Desp2Spec(Coeff,Pool='Mean',NP=313):
+    level=len(Coeff)
+    R = np.zeros((level,NP))
+    for j in range(level):
+        X = Coeff[j]
+        v = np.floor(np.linspace(0,np.shape(X)[0],NP+1))
+        
+        for k in range(NP):
+            if Pool=='Mean':
+                R[j,k] = 10 * np.log10(np.mean(X[int(v[k]):int((v[k+1])+1)]**2)+sys.float_info.epsilon)
+            elif Pool=='Max':
+                R[j,k] = 10 * np.log10(np.max(X[int(v[k]):int((v[k+1])+1)]**2)+sys.float_info.epsilon)
+                
+    return np.array(R)
+        
 
